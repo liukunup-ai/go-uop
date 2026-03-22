@@ -11,6 +11,15 @@ type Device interface {
 	// Screenshot captures current screen
 	Screenshot() ([]byte, error)
 
+	// Tap performs tap at coordinates
+	Tap(x, y int) error
+
+	// SendKeys inputs text
+	SendKeys(text string) error
+
+	// Launch launches the app
+	Launch() error
+
 	// Close releases device resources
 	Close() error
 }
