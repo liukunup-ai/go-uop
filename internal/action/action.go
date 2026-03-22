@@ -3,7 +3,7 @@ package action
 import (
 	"time"
 
-	"github.com/liukunup/go-uop/internal/locator"
+	"github.com/liukunup/go-uop/internal/selector"
 )
 
 type Action interface {
@@ -12,7 +12,7 @@ type Action interface {
 
 type TapAction struct {
 	X, Y    int
-	Element *locator.Locator
+	Element *selector.Selector
 }
 
 type SwipeAction struct {
@@ -23,7 +23,7 @@ type SwipeAction struct {
 
 type SendKeysAction struct {
 	Text    string
-	Element *locator.Locator
+	Element *selector.Selector
 	Secure  bool
 }
 
@@ -39,6 +39,6 @@ type PressKeyAction struct {
 
 type WaitAction struct {
 	Duration time.Duration
-	Element  *locator.Locator
+	Element  *selector.Selector
 	Optional bool
 }

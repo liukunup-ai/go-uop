@@ -128,7 +128,7 @@ dev.Assert().
     AISemantic("页面应该显示用户头像和用户名", apiKey)
 ```
 
-### 3.3 定位器 (Locator)
+### 3.3 定位器 (Selector)
 
 定位器支持**自动识别正则表达式**，以 `/` 包裹的字符串自动识别为正则。
 
@@ -1320,7 +1320,7 @@ go-uop/
 | **M1** | 核心框架骨架、设备连接 | P0 |
 | **M2** | iOS WDA 协议实现 | P0 |
 | **M3** | Android ADB 实现 | P0 |
-| **M4** | 链式 API (Action/Locator/Assertion) | P0 |
+| **M4** | 链式 API (Action/Selector/Assertion) | P0 |
 | **M5** | YAML 解析器 (基础命令) | P0 |
 | **M6** | YAML 控制流 (if/for/while) | P1 |
 | **M7** | OpenCV 视觉定位 | P1 |

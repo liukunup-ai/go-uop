@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/liukunup/go-uop/internal/locator"
+	"github.com/liukunup/go-uop/internal/selector"
 )
 
 type ActionBuilder struct {
@@ -27,7 +27,7 @@ func (ab *ActionBuilder) Tap(x, y int) *ActionBuilder {
 	return ab
 }
 
-func (ab *ActionBuilder) TapElement(loc *locator.Locator) *ActionBuilder {
+func (ab *ActionBuilder) TapElement(loc *selector.Selector) *ActionBuilder {
 	if ab.err != nil {
 		return ab
 	}
@@ -138,7 +138,7 @@ type Swiper interface {
 }
 
 type ElementFinder interface {
-	FindElement(loc *locator.Locator) (*ElementInfo, error)
+	FindElement(loc *selector.Selector) (*ElementInfo, error)
 }
 
 type ElementInfo struct {

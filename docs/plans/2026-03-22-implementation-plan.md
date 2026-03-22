@@ -216,8 +216,8 @@ const (
     SelectorTypeClassChain  // iOS only
 )
 
-// Locator describes how to find an element
-type Locator struct {
+// Selector describes how to find an element
+type Selector struct {
     Type     SelectorType
     Value    string
     Index    int // -1 means default (first/top-left)
@@ -244,18 +244,18 @@ func ParseRegex(value string) (*regexp.Regexp, bool) {
     return re, true
 }
 
-// NewLocator creates a locator with auto-detected type
-func NewLocator(value string) *Locator {
+// NewSelector creates a locator with auto-detected type
+func NewSelector(value string) *Selector {
     // Auto-detect regex
     if re, ok := ParseRegex(value); ok {
-        return &Locator{
+        return &Selector{
             Type:  SelectorTypeText,
             Value: value,
             regex: re,
         }
     }
     
-    return &Locator{
+    return &Selector{
         Type:  SelectorTypeText,
         Value: value,
         Index: -1,
@@ -263,46 +263,46 @@ func NewLocator(value string) *Locator {
 }
 
 // ByText creates a text locator
-func ByText(text string) *Locator {
-    return NewLocator(text)
+func ByText(text string) *Selector {
+    return NewSelector(text)
 }
 
 // ByID creates an ID locator
-func ByID(id string) *Locator {
+func ByID(id string) *Selector {
     if re, ok := ParseRegex(id); ok {
-        return &Locator{Type: SelectorTypeID, Value: id, regex: re}
+        return &Selector{Type: SelectorTypeID, Value: id, regex: re}
     }
-    return &Locator{Type: SelectorTypeID, Value: id, Index: -1}
+    return &Selector{Type: SelectorTypeID, Value: id, Index: -1}
 }
 
 // ByXPath creates an XPath locator
-func ByXPath(xpath string) *Locator {
-    return &Locator{Type: SelectorTypeXPath, Value: xpath, Index: -1}
+func ByXPath(xpath string) *Selector {
+    return &Selector{Type: SelectorTypeXPath, Value: xpath, Index: -1}
 }
 
 // ByClassName creates a class name locator
-func ByClassName(class string) *Locator {
-    return &Locator{Type: SelectorTypeClassName, Value: class, Index: -1}
+func ByClassName(class string) *Selector {
+    return &Selector{Type: SelectorTypeClassName, Value: class, Index: -1}
 }
 
 // ByPredicate creates a predicate locator (iOS only)
-func ByPredicate(predicate string) *Locator {
-    return &Locator{Type: SelectorTypePredicate, Value: predicate, Index: -1}
+func ByPredicate(predicate string) *Selector {
+    return &Selector{Type: SelectorTypePredicate, Value: predicate, Index: -1}
 }
 
 // ByClassChain creates a class chain locator (iOS only)
-func ByClassChain(chain string) *Locator {
-    return &Locator{Type: SelectorTypeClassChain, Value: chain, Index: -1}
+func ByClassChain(chain string) *Selector {
+    return &Selector{Type: SelectorTypeClassChain, Value: chain, Index: -1}
 }
 
 // Index sets the element index
-func (l *Locator) Index(idx int) *Locator {
+func (l *Selector) Index(idx int) *Selector {
     l.Index = idx
     return l
 }
 
 // Match checks if the locator matches the given text
-func (l *Locator) Match(text string) bool {
+func (l *Selector) Match(text string) bool {
     if l.regex != nil {
         return l.regex.MatchString(text)
     }
@@ -310,7 +310,7 @@ func (l *Locator) Match(text string) bool {
 }
 
 // String returns string representation
-func (l *Locator) String() string {
+func (l *Selector) String() string {
     return l.Value
 }
 ```
@@ -375,7 +375,7 @@ func TestByID_Regex(t *testing.T) {
     }
 }
 
-func TestLocator_Index(t *testing.T) {
+func TestSelector_Index(t *testing.T) {
     l := ByText("确定").Index(2)
     
     if l.Index != 2 {
@@ -383,7 +383,7 @@ func TestLocator_Index(t *testing.T) {
     }
 }
 
-func TestLocator_DefaultIndex(t *testing.T) {
+func TestSelector_DefaultIndex(t *testing.T) {
     l := ByText("确定")
     
     if l.Index != -1 {
@@ -473,7 +473,7 @@ type Action interface {
 // TapAction taps on coordinates or element
 type TapAction struct {
     X, Y     int
-    Element  *locator.Locator
+    Element  *locator.Selector
 }
 
 // SwipeAction performs swipe gesture
@@ -486,7 +486,7 @@ type SwipeAction struct {
 // SendKeysAction inputs text
 type SendKeysAction struct {
     Text    string
-    Element *locator.Locator
+    Element *locator.Selector
     Secure  bool // don't log the text
 }
 
@@ -505,7 +505,7 @@ type PressKeyAction struct {
 // WaitAction waits for duration or condition
 type WaitAction struct {
     Duration  time.Duration
-    Element   *locator.Locator
+    Element   *locator.Selector
     Optional  bool
 }
 ```
@@ -1590,7 +1590,7 @@ func (ab *ActionBuilder) Tap(x, y int) *ActionBuilder {
 }
 
 // TapElement taps on element
-func (ab *ActionBuilder) TapElement(loc *locator.Locator) *ActionBuilder {
+func (ab *ActionBuilder) TapElement(loc *locator.Selector) *ActionBuilder {
     // TODO: implement
     return ab
 }

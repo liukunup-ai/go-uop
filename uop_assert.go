@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/liukunup/go-uop/internal/locator"
+	"github.com/liukunup/go-uop/internal/selector"
 )
 
 var ErrAssertionFailed = errors.New("assertion failed")
@@ -26,7 +26,7 @@ func (e *AssertError) Unwrap() error {
 	return e.Cause
 }
 
-func AssertVisible(device Device, loc *locator.Locator) error {
+func AssertVisible(device Device, loc *selector.Selector) error {
 	finder, ok := device.(ElementFinder)
 	if !ok {
 		return &AssertError{Message: "device does not support element finding"}
@@ -44,7 +44,7 @@ func AssertVisible(device Device, loc *locator.Locator) error {
 	return nil
 }
 
-func AssertNotVisible(device Device, loc *locator.Locator) error {
+func AssertNotVisible(device Device, loc *selector.Selector) error {
 	finder, ok := device.(ElementFinder)
 	if !ok {
 		return &AssertError{Message: "device does not support element finding"}
@@ -122,7 +122,7 @@ func AssertNoError(err error, msg string) error {
 	return nil
 }
 
-func AssertText(device Device, loc *locator.Locator, expectedText string) error {
+func AssertText(device Device, loc *selector.Selector, expectedText string) error {
 	finder, ok := device.(ElementFinder)
 	if !ok {
 		return &AssertError{Message: "device does not support element finding"}

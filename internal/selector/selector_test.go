@@ -1,4 +1,4 @@
-package locator
+package selector
 
 import (
 	"testing"
@@ -54,7 +54,7 @@ func TestByID_Regex(t *testing.T) {
 	}
 }
 
-func TestLocator_SetIndex(t *testing.T) {
+func TestSelector_SetIndex(t *testing.T) {
 	l := ByText("确定").SetIndex(2)
 
 	if l.Index != 2 {
@@ -62,7 +62,7 @@ func TestLocator_SetIndex(t *testing.T) {
 	}
 }
 
-func TestLocator_DefaultIndex(t *testing.T) {
+func TestSelector_DefaultIndex(t *testing.T) {
 	l := ByText("确定")
 
 	if l.Index != -1 {
