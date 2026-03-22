@@ -3,7 +3,7 @@ package ios
 import (
 	"fmt"
 
-	"github.com/liukunup/go-uop"
+	"github.com/liukunup/go-uop/core"
 	"github.com/liukunup/go-uop/ios/wda"
 )
 
@@ -35,8 +35,8 @@ func NewDevice(bundleID string, opts ...Option) (*Device, error) {
 	}, nil
 }
 
-func (d *Device) Platform() uop.Platform {
-	return uop.IOS
+func (d *Device) Platform() core.Platform {
+	return core.IOS
 }
 
 func (d *Device) Info() (map[string]interface{}, error) {
@@ -74,4 +74,4 @@ func (d *Device) GetSource() (string, error) {
 	return d.client.GetSource()
 }
 
-var _ uop.Device = (*Device)(nil)
+var _ core.Device = (*Device)(nil)

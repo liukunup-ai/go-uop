@@ -4,10 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
-	"regexp"
-	"strconv"
 	"strings"
-	"time"
 )
 
 type Client struct {
@@ -45,6 +42,10 @@ func (c *Client) serialArg() string {
 		return "-s " + c.serial
 	}
 	return ""
+}
+
+func (c *Client) Serial() string {
+	return c.serial
 }
 
 func (c *Client) exec(args ...string) (string, error) {
@@ -113,112 +114,4 @@ func Devices() ([]DeviceInfo, error) {
 	}
 
 	return devices, nil
-}
-
-func (c *Client) Tap(x, y int) error {
-	_, err := c.exec("shell", "input", "tap", strconv.Itoa(x), strconv.Itoa(y))
-	return err
-}
-
-func (c *Client) Swipe(x1, y1, x2, y2 int, durationMs int) error {
-	args := []string{"shell", "input", "swipe",
-		strconv.Itoa(x1), strconv.Itoa(y1),
-		strconv.Itoa(x2), strconv.Itoa(y2)}
-	if durationMs > 0 {
-		args = append(args, strconv.Itoa(durationMs))
-	}
-	_, err := c.exec(args...)
-	return err
-}
-
-func (c *Client) SendText(text string) error {
-	escaped := strings.ReplaceAll(text, " ", "%s")
-	_, err := c.exec("shell", "input", "text", escaped)
-	return err
-}
-
-func (c *Client) PressKey(keyCode int) error {
-	_, err := c.exec("shell", "input", "keyevent", strconv.Itoa(keyCode))
-	return err
-}
-
-const (
-	KeyHome       = 3
-	KeyBack       = 4
-	KeyEnter      = 66
-	KeyVolumeUp   = 24
-	KeyVolumeDown = 25
-	KeyPower      = 26
-)
-
-func (c *Client) Screenshot() ([]byte, error) {
-	out := "/sdcard/screenshot.png"
-	if _, err := c.exec("shell", "screencap", "-p", out); err != nil {
-		return nil, err
-	}
-
-	cmd := exec.Command("adb", append(strings.Fields(c.serialArg()), "exec-out", "screencap", "-p")...)
-	var buf bytes.Buffer
-	cmd.Stdout = &buf
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("screencap: %w", err)
-	}
-
-	return buf.Bytes(), nil
-}
-
-func (c *Client) Shell(command string) (string, error) {
-	return c.exec("shell", command)
-}
-
-func (c *Client) StartActivity(component string) error {
-	_, err := c.exec("shell", "am", "start", "-n", component)
-	return err
-}
-
-func (c *Client) StopPackage(packageName string) error {
-	_, err := c.exec("shell", "am", "force-stop", packageName)
-	return err
-}
-
-func (c *Client) Install(apkPath string, grantPerms bool) error {
-	args := []string{"install"}
-	if grantPerms {
-		args = append(args, "-g")
-	}
-	args = append(args, apkPath)
-	_, err := c.exec(args...)
-	return err
-}
-
-func (c *Client) Uninstall(packageName string) error {
-	_, err := c.exec("uninstall", packageName)
-	return err
-}
-
-func (c *Client) CurrentPackage() (string, error) {
-	output, err := c.Shell("dumpsys activity activities | grep mResumedActivity")
-	if err != nil {
-		return "", err
-	}
-
-	re := regexp.MustCompile(`([\w.]+)/`)
-	matches := re.FindStringSubmatch(output)
-	if len(matches) < 2 {
-		return "", fmt.Errorf("could not find foreground package")
-	}
-
-	return matches[1], nil
-}
-
-func (c *Client) WaitForIdle(timeout time.Duration) error {
-	end := time.Now().Add(timeout)
-	for time.Now().Before(end) {
-		_, err := c.Shell("sleep 0.1 && dumpsys activity activities")
-		if err == nil {
-			return nil
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
-	return fmt.Errorf("timeout waiting for idle")
 }

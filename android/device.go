@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/liukunup/go-uop"
 	"github.com/liukunup/go-uop/android/adb"
+	"github.com/liukunup/go-uop/core"
 )
 
 type Device struct {
@@ -30,8 +30,8 @@ func NewDevice(opts ...Option) (*Device, error) {
 	}, nil
 }
 
-func (d *Device) Platform() uop.Platform {
-	return uop.Android
+func (d *Device) Platform() core.Platform {
+	return core.Android
 }
 
 func (d *Device) Info() (map[string]interface{}, error) {
@@ -99,4 +99,4 @@ func (d *Device) Swipe(x1, y1, x2, y2 int, duration time.Duration) error {
 	return d.client.Swipe(x1, y1, x2, y2, int(duration.Milliseconds()))
 }
 
-var _ uop.Device = (*Device)(nil)
+var _ core.Device = (*Device)(nil)

@@ -1,4 +1,4 @@
-package uop
+package core
 
 // Device represents a connected mobile device
 type Device interface {
@@ -14,6 +14,14 @@ type Device interface {
 	// Close releases device resources
 	Close() error
 }
+
+// Platform represents target platform
+type Platform string
+
+const (
+	IOS     Platform = "ios"
+	Android Platform = "android"
+)
 
 // NewDevice creates a new device connection
 func NewDevice(platform Platform, opts ...DeviceOption) (Device, error) {

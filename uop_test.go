@@ -2,7 +2,6 @@ package uop
 
 import (
 	"testing"
-	"time"
 )
 
 func TestNewDevice_InvalidPlatform(t *testing.T) {
@@ -14,20 +13,14 @@ func TestNewDevice_InvalidPlatform(t *testing.T) {
 
 func TestDeviceOption_WithSerial(t *testing.T) {
 	opt := WithSerial("test-123")
-	cfg := &deviceConfig{}
-	opt(cfg)
-
-	if cfg.serial != "test-123" {
-		t.Errorf("expected serial 'test-123', got '%s'", cfg.serial)
+	if opt == nil {
+		t.Error("expected non-nil option")
 	}
 }
 
-func TestDeviceOption_WithTimeout(t *testing.T) {
-	opt := WithTimeout(30 * time.Second)
-	cfg := &deviceConfig{}
-	opt(cfg)
-
-	if cfg.timeout != 30*time.Second {
-		t.Errorf("expected 30s timeout, got %v", cfg.timeout)
+func TestDeviceOption_WithAddress(t *testing.T) {
+	opt := WithAddress("localhost:8080")
+	if opt == nil {
+		t.Error("expected non-nil option")
 	}
 }

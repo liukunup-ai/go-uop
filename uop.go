@@ -1,17 +1,22 @@
 package uop
 
-import "errors"
+import "github.com/liukunup/go-uop/core"
 
-// Platform represents target platform
-type Platform string
+type Device = core.Device
+type Platform = core.Platform
+type DeviceOption = core.DeviceOption
 
 const (
-	IOS     Platform = "ios"
-	Android Platform = "android"
+	IOS     = core.IOS
+	Android = core.Android
 )
 
-// ErrNotImplemented indicates feature not implemented
-var ErrNotImplemented = errors.New("not implemented")
+var (
+	ErrNotImplemented = core.ErrNotImplemented
+	ErrDeviceNotFound = core.ErrDeviceNotFound
+)
 
-// ErrDeviceNotFound indicates device not found
-var ErrDeviceNotFound = errors.New("device not found")
+var NewDevice = core.NewDevice
+var WithSerial = core.WithSerial
+var WithAddress = core.WithAddress
+var WithTimeout = core.WithTimeout
