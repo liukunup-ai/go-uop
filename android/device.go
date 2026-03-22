@@ -19,7 +19,7 @@ func NewDevice(opts ...Option) (*Device, error) {
 		opt(cfg)
 	}
 
-	client, err := adb.NewClient(cfg.serial)
+	client, err := adb.NewClient(cfg.udid)
 	if err != nil {
 		return nil, fmt.Errorf("create ADB client: %w", err)
 	}

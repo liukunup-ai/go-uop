@@ -1,15 +1,15 @@
 package android
 
 type config struct {
-	serial      string
+	udid        string
 	packageName string
 }
 
 type Option func(*config)
 
-func WithSerial(serial string) Option {
+func WithUDID(udid string) Option {
 	return func(c *config) {
-		c.serial = serial
+		c.udid = udid
 	}
 }
 
