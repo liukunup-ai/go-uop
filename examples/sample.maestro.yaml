@@ -1,0 +1,26 @@
+appId: com.example.app
+name: Sample Login Flow
+tags:
+  - sample
+  - login
+  - smoke
+steps:
+  - launch: com.example.app
+  - wait: 500
+  - tapOn:
+      text: "Login"
+      optional: true
+      timeout: 5000
+  - inputText:
+      text: "user@example.com"
+      id: "email_input"
+  - inputText:
+      text: "password123"
+      id: "password_input"
+      clearExistingText: true
+  - tapOn:
+      text: "Sign In"
+  - wait: 2000
+  - assertVisible:
+      text: "Welcome"
+      optional: true
