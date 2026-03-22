@@ -1,0 +1,22 @@
+package uop
+
+// Device represents a connected mobile device
+type Device interface {
+	// Platform returns the device platform
+	Platform() Platform
+
+	// Info returns device information
+	Info() (map[string]interface{}, error)
+
+	// Screenshot captures current screen
+	Screenshot() ([]byte, error)
+
+	// Close releases device resources
+	Close() error
+}
+
+// NewDevice creates a new device connection
+func NewDevice(platform Platform, opts ...DeviceOption) (Device, error) {
+	// TODO: implement
+	return nil, ErrNotImplemented
+}
