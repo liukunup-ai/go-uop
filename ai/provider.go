@@ -24,8 +24,6 @@ func NewProvider(providerType string, config Config) (Provider, error) {
 	switch providerType {
 	case "openai":
 		return NewOpenAI(config)
-	case "claude":
-		return NewClaude(config)
 	default:
 		return nil, nil
 	}

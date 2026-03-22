@@ -923,10 +923,6 @@ type OpenAIProvider struct {
     Model  string // "gpt-4o", "gpt-4o-mini"
 }
 
-type ClaudeProvider struct {
-    APIKey string
-    Model  string // "claude-opus-4-5", "claude-sonnet-4-5"
-}
 ```
 
 ### 5.2 使用方式
@@ -1223,7 +1219,6 @@ go-uop/
 ├── ai/
 │   ├── provider.go
 │   ├── openai.go
-│   ├── claude.go
 │   └── provider_test.go       # AI Provider 单元测试
 └── uop.go  # 主入口，导出统一 API
 ```
@@ -1313,7 +1308,6 @@ go-uop/
 ├── ai/
 │   ├── provider.go
 │   ├── openai.go
-│   └── claude.go
 └── uop.go  # 主入口，导出统一 API
 ```
 
@@ -1330,7 +1324,7 @@ go-uop/
 | **M5** | YAML 解析器 (基础命令) | P0 |
 | **M6** | YAML 控制流 (if/for/while) | P1 |
 | **M7** | OpenCV 视觉定位 | P1 |
-| **M8** | AI 断言 (OpenAI/Claude) | P2 |
+| **M8** | AI 断言 (OpenAI) | P2 |
 | **M9** | 并行执行器 | P1 |
 | **M10** | 报告生成器 | P1 |
 | **M11** | 错误恢复、重试机制 | P1 |

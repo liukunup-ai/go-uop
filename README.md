@@ -8,7 +8,7 @@ Go SDK for unified mobile automation supporting iOS (via WebDriverAgent) and And
 - **Chainable Fluent API**: Build actions with readable chain calls
 - **YAML Test Runner**: Define test flows in YAML with Maestro-style commands
 - **Vision Module**: Template matching for image-based automation
-- **AI Integration**: OpenAI and Claude providers for intelligent automation
+- **AI Integration**: OpenAI provider for intelligent automation
 - **Parallel Execution**: Run tests across multiple devices
 - **Retry Mechanisms**: Configurable retry with exponential backoff
 
