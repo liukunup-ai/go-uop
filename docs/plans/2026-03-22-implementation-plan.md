@@ -1,7 +1,5 @@
 # go-uop Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Build a unified mobile automation library supporting iOS (native WDA) and Android (ADB) with chainable Go API and YAML runner.
 
 **Architecture:** 
@@ -2131,7 +2129,7 @@ Create `internal/vision/template.go` with OpenCV template matching
 
 ### Task 8.1: AI Provider
 
-Create `ai/provider.go`, `ai/openai.go`, `ai/claude.go`
+Create `ai/provider.go`, `ai/openai.go`
 
 ### Task 9.1: Parallel Executor
 
