@@ -109,3 +109,12 @@ steps:
 ## License
 
 MIT
+
+## Links
+
+- https://github.com/openai/openai-go
+- https://github.com/ElectricBubble/gwda
+- https://github.com/danielpaulus/go-ios
+- https://github.com/appium/WebDriverAgent
+- https://playwright.cn/docs/intro
+- https://docs.maestro.dev
