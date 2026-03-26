@@ -33,3 +33,8 @@ go.work.sum
 
 # Worktrees
 .worktrees/
+
+# Console frontend
+console/node_modules/
+console/dist/
+console/_out/
