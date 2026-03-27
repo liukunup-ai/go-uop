@@ -4,7 +4,7 @@
 help: ## Show this help message
 	@echo "go-uop Makefile Commands"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-][a-zA-Z0-9/_-]*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 # =============================================================================
 # Build Commands
@@ -122,10 +122,39 @@ release: ci build ## Build for release
 	@echo "Build artifacts ready for release"
 
 # =============================================================================
+# Console (Web UI)
+# =============================================================================
+.PHONY: console/deps
+console/deps: ## Install console frontend dependencies
+	cd console && npm install
+
+.PHONY: console/dev
+console/dev: ## Run console frontend in dev mode (with proxy to :8080)
+	cd console && npm run dev
+
+.PHONY: console/build
+console/build: ## Build console frontend
+	cd console && npm run build
+
+.PHONY: dev/console
+dev/console: ## Run console backend in dev mode (serves on :8080, proxies to localhost:5173)
+	go run ./cmd/console/main.go -dev -open
+
+.PHONY: build/console
+build/console: console/build ## Build console binary with embedded frontend
+	go build -o bin/uop-console ./cmd/console/
+
+.PHONY: run/console
+run/console: ## Run console binary
+	./bin/uop-console
+
+# =============================================================================
 # Clean
 # =============================================================================
 .PHONY: clean
 clean: ## Clean build artifacts
 	rm -rf coverage.out coverage.html
+	rm -rf bin/uop-console
+	rm -rf console/dist console/_out
 	find . -name "*.test" -delete
 	find . -name "*_mock.go" -delete
