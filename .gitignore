@@ -38,3 +38,4 @@ go.work.sum
 console/node_modules/
 console/dist/
 console/_out/
+console/package-lock.json
