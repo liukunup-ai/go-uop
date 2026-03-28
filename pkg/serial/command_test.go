@@ -70,57 +70,6 @@ commands:
 	}
 }
 
-func TestCommandTable_GetByDefaultName(t *testing.T) {
-	// 创建临时 YAML 文件
-	content := `
-commands:
-  - id: screenshot
-    name: 截屏
-    default_name: screenshot
-    command: "AT+SCREENSHOT\r\n"
-    log: "OK"
-    timeout: 5s
-  - id: reset
-    name: 复位
-    default_name: reset
-    command: "AT+RST\r\n"
-    timeout: 3s
-`
-	tmpfile, err := os.CreateTemp("", "commands_*.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpfile.Name())
-
-	if _, err := tmpfile.WriteString(content); err != nil {
-		t.Fatal(err)
-	}
-	tmpfile.Close()
-
-	ct := NewCommandTable()
-	if err := ct.LoadFromFile(tmpfile.Name()); err != nil {
-		t.Fatalf("LoadFromFile failed: %v", err)
-	}
-
-	// 测试 GetByDefaultName
-	cmd, ok := ct.GetByDefaultName("screenshot")
-	if !ok {
-		t.Fatal("expected to find command 'screenshot'")
-	}
-	if cmd.ID != "screenshot" {
-		t.Errorf("expected id 'screenshot', got '%s'", cmd.ID)
-	}
-	if cmd.Name != "截屏" {
-		t.Errorf("expected name '截屏', got '%s'", cmd.Name)
-	}
-
-	// 测试不存在的 default name
-	_, ok = ct.GetByDefaultName("notexist")
-	if ok {
-		t.Error("expected not to find 'notexist'")
-	}
-}
-
 func TestCommandTable_List(t *testing.T) {
 	ct := NewCommandTable()
 	// 直接添加命令进行测试

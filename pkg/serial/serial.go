@@ -286,14 +286,14 @@ func (s *Serial) Launch() error {
 	return fmt.Errorf("launch not supported for serial device")
 }
 
-// SendCommand sends a command by DefaultName
+// SendCommand sends a command by id
 func (s *Serial) SendCommand(name string, args ...interface{}) (interface{}, error) {
 	ct := s.cfg.Commands
 	if ct == nil {
 		return nil, fmt.Errorf("command table not configured")
 	}
 
-	cmd, ok := ct.GetByDefaultName(name)
+	cmd, ok := ct.GetByID(name)
 	if !ok {
 		return nil, fmt.Errorf("command not found: %s", name)
 	}
