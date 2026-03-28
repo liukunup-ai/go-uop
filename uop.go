@@ -9,6 +9,7 @@ type DeviceOption = core.DeviceOption
 const (
 	IOS     = core.IOS
 	Android = core.Android
+	Serial  = core.Serial
 )
 
 var (
