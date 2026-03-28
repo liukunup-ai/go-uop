@@ -11,6 +11,7 @@ Go SDK for unified mobile automation supporting iOS (via WebDriverAgent) and And
 - **AI Integration**: OpenAI provider for intelligent automation
 - **Parallel Execution**: Run tests across multiple devices
 - **Retry Mechanisms**: Configurable retry with exponential backoff
+- **Serial Communication**: Event-driven serial port with command table management
 
 ## Installation
 
@@ -49,6 +50,31 @@ defer device.Close()
 err = device.Tap(100, 200)
 ```
 
+### Serial
+
+```go
+// Load command table from YAML
+ct := serial.NewCommandTable()
+ct.LoadFile("commands.yaml")
+
+// Open serial port with command table
+s, err := serial.NewSerial(&serial.Config{
+    Name:    "/dev/ttyUSB0",
+    Baud:    115200,
+    Commands: ct,
+})
+
+// Send command by ID (async with callback)
+s.SendByID("reset", func(result *serial.SendResult) {
+    if result.Success {
+        fmt.Println("Command executed")
+    }
+})
+
+// Or send by name
+s.SendByName("设备复位", callback)
+```
+
 ### Fluent API
 
 ```go
@@ -80,6 +106,7 @@ Core Modules (locator, action, vision, retry)
 | `ios/wda` | WebDriverAgent client |
 | `android` | Android device implementation |
 | `android/adb` | ADB client |
+| `serial` | Serial port with event-driven monitoring |
 | `internal/locator` | Element locator types |
 | `internal/action` | Action types |
 | `internal/vision` | Vision/image processing |

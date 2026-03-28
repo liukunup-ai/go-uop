@@ -1,6 +1,6 @@
 // Package serial provides serial port communication with event-driven monitoring.
 //
-// Example usage:
+// Basic usage:
 //
 //	s, _ := serial.NewSerial(&serial.Config{Name: "/dev/ttyUSB0", Baud: 115200})
 //
@@ -11,6 +11,23 @@
 //	m.AddRateLimitedRule("ERROR", 5*time.Second, serial.FileHandler{Path: "/tmp/errors.log"}.Handle)
 //
 //	s.AddObserver(m)
+//
+// Command table usage:
+//
+//	ct := serial.NewCommandTable()
+//	ct.LoadFromFile("commands.yaml")
+//
+//	s, _ := serial.NewSerial(&serial.Config{
+//	    Name: "/dev/ttyUSB0",
+//	    Baud: 115200,
+//	    Commands: ct,
+//	})
+//
+//	s.SendByID("reset", func(result *serial.SendResult) {
+//	    if result.Success {
+//	        fmt.Println("Command executed")
+//	    }
+//	})
 package serial
 
 import (
