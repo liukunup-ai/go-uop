@@ -30,6 +30,7 @@ type Platform string
 const (
 	IOS     Platform = "ios"
 	Android Platform = "android"
+	Serial  Platform = "serial"
 )
 
 // NewDevice creates a new device connection

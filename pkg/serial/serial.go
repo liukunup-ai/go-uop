@@ -36,6 +36,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/liukunup/go-uop/core"
 	"github.com/tarm/serial"
 )
 
@@ -249,6 +250,67 @@ func (s *Serial) Close() error {
 	close(s.done)
 	s.notifyClose()
 	return s.port.Close()
+}
+
+// Platform returns the device platform
+func (s *Serial) Platform() core.Platform {
+	return core.Serial
+}
+
+// Info returns device information
+func (s *Serial) Info() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"platform": "serial",
+		"port":     s.cfg.Name,
+		"baud":     s.cfg.Baud,
+	}, nil
+}
+
+// Screenshot captures current screen (not supported for serial)
+func (s *Serial) Screenshot() ([]byte, error) {
+	return nil, fmt.Errorf("screenshot not supported for serial device")
+}
+
+// Tap performs tap at coordinates (not supported for serial)
+func (s *Serial) Tap(x, y int) error {
+	return fmt.Errorf("tap not supported for serial device")
+}
+
+// SendKeys inputs text (not supported for serial)
+func (s *Serial) SendKeys(text string) error {
+	return fmt.Errorf("sendkeys not supported for serial device")
+}
+
+// Launch launches the app (not supported for serial)
+func (s *Serial) Launch() error {
+	return fmt.Errorf("launch not supported for serial device")
+}
+
+// SendCommand sends a command by DefaultName
+func (s *Serial) SendCommand(name string, args ...interface{}) (interface{}, error) {
+	ct := s.cfg.Commands
+	if ct == nil {
+		return nil, fmt.Errorf("command table not configured")
+	}
+
+	cmd, ok := ct.GetByDefaultName(name)
+	if !ok {
+		return nil, fmt.Errorf("command not found: %s", name)
+	}
+
+	// TODO: 参数化替换（后续实现）
+	_ = args
+
+	var result *SendResult
+	err := s.sendCommand(cmd, func(r *SendResult) {
+		result = r
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // SendByID 通过 ID 发送命令
