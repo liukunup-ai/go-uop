@@ -48,7 +48,11 @@ func (m *templateMatcher) Find(screenshot, templateImg []byte) ([]*MatchResult, 
 	result := gocv.NewMat()
 	defer result.Close()
 
-	gocv.MatchTemplate(screen, tmpl, &result, gocv.TmCcoeffNormed, gocv.NewMat())
+	var mask gocv.Mat
+	err = gocv.MatchTemplate(screen, tmpl, &result, gocv.TmCcoeffNormed, mask)
+	if err != nil {
+		return nil, err
+	}
 
 	// Find best match
 	_, maxVal, _, maxLoc := gocv.MinMaxLoc(result)
