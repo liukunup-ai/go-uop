@@ -74,5 +74,5 @@ func (m *templateMatcher) Find(screenshot, templateImg []byte) ([]*MatchResult, 
 }
 
 func (m *templateMatcher) DebugRender(screenshot []byte, results []*MatchResult) []byte {
-	return nil
+	return DebugRender(screenshot, results, m.config)
 }
