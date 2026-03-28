@@ -30,6 +30,7 @@ type Config struct {
 	Size        byte // data bits, default 8
 	Parity      Parity
 	StopBits    StopBits
+	Commands    *CommandTable // 可选，命令表
 }
 
 // Parity parity mode.
@@ -66,10 +67,23 @@ type Observer interface {
 	OnClose()
 }
 
+// SendResult 发送结果
+type SendResult struct {
+	Command *Command
+	Success bool
+	Echo    []byte
+	Matched bool
+	Error   error
+}
+
+// SendCallback 发送完成回调
+type SendCallback func(*SendResult)
+
 // Serial is a serial port connection.
 type Serial struct {
 	mu        sync.RWMutex
 	observers []Observer
+	monitor   *Monitor // 内置监视器用于命令回显校验
 	eventCh   chan Event
 	done      chan struct{}
 	cfg       *Config
@@ -158,9 +172,12 @@ func NewSerial(cfg *Config) (*Serial, error) {
 	s := &Serial{
 		cfg:     cfg,
 		port:    port,
+		monitor: NewMonitor(),
 		eventCh: make(chan Event, 100),
 		done:    make(chan struct{}),
 	}
+
+	s.observers = append(s.observers, s.monitor)
 
 	go s.readLoop()
 
@@ -215,6 +232,94 @@ func (s *Serial) Close() error {
 	close(s.done)
 	s.notifyClose()
 	return s.port.Close()
+}
+
+// SendByID 通过 ID 发送命令
+func (s *Serial) SendByID(id string, callback SendCallback) error {
+	s.mu.RLock()
+	ct := s.cfg.Commands
+	s.mu.RUnlock()
+
+	if ct == nil {
+		return fmt.Errorf("command table not configured")
+	}
+
+	cmd, ok := ct.GetByID(id)
+	if !ok {
+		return fmt.Errorf("command not found: %s", id)
+	}
+
+	return s.sendCommand(cmd, callback)
+}
+
+// SendByName 通过名称发送命令
+func (s *Serial) SendByName(name string, callback SendCallback) error {
+	s.mu.RLock()
+	ct := s.cfg.Commands
+	s.mu.RUnlock()
+
+	if ct == nil {
+		return fmt.Errorf("command table not configured")
+	}
+
+	cmd, ok := ct.GetByName(name)
+	if !ok {
+		return fmt.Errorf("command not found: %s", name)
+	}
+
+	return s.sendCommand(cmd, callback)
+}
+
+// sendCommand 内部发送方法
+func (s *Serial) sendCommand(cmd *Command, callback SendCallback) error {
+	result := &SendResult{
+		Command: cmd,
+	}
+
+	var cleanup cleanupFunc
+
+	if cmd.Log != "" {
+		cleanup = s.monitor.AddTemporaryRule(cmd.Log, MatchOnce, func(e Event) {
+			result.Success = true
+			result.Matched = true
+			result.Echo = e.Data
+			if callback != nil {
+				callback(result)
+			}
+		})
+
+		if cmd.Timeout > 0 {
+			go func() {
+				time.Sleep(cmd.Timeout)
+				if cleanup != nil {
+					cleanup()
+					cleanup = nil
+				}
+				if !result.Success && callback != nil {
+					result.Success = false
+					result.Error = fmt.Errorf("command timeout: %s", cmd.ID)
+					callback(result)
+				}
+			}()
+		}
+	}
+
+	_, err := s.port.Write([]byte(cmd.Command))
+	if err != nil {
+		if cleanup != nil {
+			cleanup()
+		}
+		return fmt.Errorf("send command: %w", err)
+	}
+
+	if cmd.Log == "" {
+		result.Success = true
+		if callback != nil {
+			callback(result)
+		}
+	}
+
+	return nil
 }
 
 // ReadByte reads a single byte.

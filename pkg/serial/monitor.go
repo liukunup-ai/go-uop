@@ -175,3 +175,36 @@ func (m *Monitor) OnError(err error) {
 // OnClose 关闭处理（空实现）
 func (m *Monitor) OnClose() {
 }
+
+// cleanupFunc 清理函数，用于移除临时规则
+type cleanupFunc func()
+
+// AddTemporaryRule 添加临时规则（命令执行完自动移除）
+// 返回 cleanupFunc，调用后立即移除规则
+func (m *Monitor) AddTemporaryRule(keyword string, matchType MatchType, handler EventHandler) cleanupFunc {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	rule := &Rule{
+		Keyword:   keyword,
+		MatchType: matchType,
+		enabled:   true,
+	}
+
+	m.rules = append(m.rules, rule)
+	m.handlers[keyword] = handler
+
+	return func() {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+
+		// 找到规则并移除
+		for i, r := range m.rules {
+			if r == rule {
+				m.rules = append(m.rules[:i], m.rules[i+1:]...)
+				delete(m.handlers, keyword)
+				return
+			}
+		}
+	}
+}
