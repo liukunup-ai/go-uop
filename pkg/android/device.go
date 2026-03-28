@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/liukunup/go-uop/android/adb"
 	"github.com/liukunup/go-uop/core"
+	"github.com/liukunup/go-uop/pkg/android/adb"
 )
 
 type Device struct {

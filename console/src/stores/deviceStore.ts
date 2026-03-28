@@ -33,11 +33,10 @@ export const useDeviceStore = create<DeviceStore>((set, get) => ({
 
   fetchDevices: async () => {
     try {
-      set({ isLoading: true, error: null });
       const devices = await api.listDevices();
-      set({ devices, isLoading: false });
+      set({ devices, error: null });
     } catch (err: any) {
-      set({ error: err.message, isLoading: false });
+      set({ error: err.message });
     }
   },
 

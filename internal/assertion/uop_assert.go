@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/liukunup/go-uop/core"
+	fluentpkg "github.com/liukunup/go-uop/internal/fluent"
 	"github.com/liukunup/go-uop/internal/selector"
 )
 
@@ -26,8 +28,8 @@ func (e *AssertError) Unwrap() error {
 	return e.Cause
 }
 
-func AssertVisible(device Device, loc *selector.Selector) error {
-	finder, ok := device.(ElementFinder)
+func AssertVisible(device core.Device, loc *selector.Selector) error {
+	finder, ok := device.(fluentpkg.ElementFinder)
 	if !ok {
 		return &AssertError{Message: "device does not support element finding"}
 	}
@@ -44,8 +46,8 @@ func AssertVisible(device Device, loc *selector.Selector) error {
 	return nil
 }
 
-func AssertNotVisible(device Device, loc *selector.Selector) error {
-	finder, ok := device.(ElementFinder)
+func AssertNotVisible(device core.Device, loc *selector.Selector) error {
+	finder, ok := device.(fluentpkg.ElementFinder)
 	if !ok {
 		return &AssertError{Message: "device does not support element finding"}
 	}
@@ -122,8 +124,8 @@ func AssertNoError(err error, msg string) error {
 	return nil
 }
 
-func AssertText(device Device, loc *selector.Selector, expectedText string) error {
-	finder, ok := device.(ElementFinder)
+func AssertText(device core.Device, loc *selector.Selector, expectedText string) error {
+	finder, ok := device.(fluentpkg.ElementFinder)
 	if !ok {
 		return &AssertError{Message: "device does not support element finding"}
 	}

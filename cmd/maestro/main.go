@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/liukunup/go-uop/core"
-	"github.com/liukunup/go-uop/ios"
 	"github.com/liukunup/go-uop/maestro"
+	"github.com/liukunup/go-uop/pkg/ios"
 )
 
 const (

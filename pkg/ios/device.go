@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/liukunup/go-uop/core"
-	"github.com/liukunup/go-uop/ios/wda"
+	"github.com/liukunup/go-uop/pkg/ios/wda"
 )
 
 type Device struct {
@@ -25,8 +25,10 @@ func NewDevice(bundleID string, opts ...Option) (*Device, error) {
 		return nil, fmt.Errorf("create WDA client: %w", err)
 	}
 
-	if err := client.StartSession(bundleID); err != nil {
-		return nil, fmt.Errorf("start session: %w", err)
+	if !cfg.skipSession {
+		if err := client.StartSession(bundleID); err != nil {
+			return nil, fmt.Errorf("start session: %w", err)
+		}
 	}
 
 	return &Device{

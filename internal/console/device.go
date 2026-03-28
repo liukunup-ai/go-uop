@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liukunup/go-uop/android"
-	"github.com/liukunup/go-uop/android/adb"
 	"github.com/liukunup/go-uop/core"
-	"github.com/liukunup/go-uop/ios"
+	"github.com/liukunup/go-uop/pkg/android"
+	"github.com/liukunup/go-uop/pkg/android/adb"
+	"github.com/liukunup/go-uop/pkg/ios"
 )
 
 type DeviceManager struct {
@@ -29,7 +29,7 @@ func (m *DeviceManager) ListDevices() ([]*Device, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var result []*Device
+	result := []*Device{}
 
 	// List Android devices
 	androidDevices, err := adb.Devices()
@@ -87,9 +87,13 @@ func (m *DeviceManager) ConnectDevice(d *Device) (core.Device, error) {
 			android.WithPackage(d.PkgName),
 		)
 	case "ios":
+		opts := []ios.Option{ios.WithAddress(d.Address)}
+		if d.SkipSession {
+			opts = append(opts, ios.SkipSession())
+		}
 		device, err = ios.NewDevice(
 			d.Serial, // bundleID for iOS
-			ios.WithAddress(d.Address),
+			opts...,
 		)
 	default:
 		err = ErrUnsupportedPlatform

@@ -7,6 +7,7 @@ export interface Device {
   model?: string;
   address?: string;
   packageName?: string;
+  skipSession?: boolean;
 }
 
 export interface CommandRecord {
@@ -22,4 +23,41 @@ export interface CommandRecord {
 export interface CommandRequest {
   command: string;
   params: Record<string, any>;
+}
+
+export interface SerialPortInfo {
+  name: string;
+  description?: string;
+}
+
+export interface SerialConfig {
+  name: string;
+  baud: number;
+  dataBits: number;
+  parity: string;
+  stopBits: number;
+  timeout?: number;
+}
+
+export interface SerialConnection {
+  id: string;
+  config: SerialConfig;
+  status: 'open' | 'closed' | 'error';
+  commands?: SerialCommand[];
+}
+
+export interface SerialCommand {
+  id: string;
+  name: string;
+  command: string;
+  log?: string;
+  timeout?: number;
+}
+
+export interface SerialCommandResult {
+  id: string;
+  success: boolean;
+  sent: string;
+  matched?: boolean;
+  timestamp: string;
 }

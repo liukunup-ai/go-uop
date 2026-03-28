@@ -5,15 +5,16 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/liukunup/go-uop/core"
 	"github.com/liukunup/go-uop/internal/selector"
 )
 
 type ActionBuilder struct {
-	device Device
+	device core.Device
 	err    error
 }
 
-func NewActionBuilder(device Device) *ActionBuilder {
+func NewActionBuilder(device core.Device) *ActionBuilder {
 	return &ActionBuilder{device: device}
 }
 

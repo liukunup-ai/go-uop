@@ -19,15 +19,21 @@ type Server struct {
 	devMode    bool
 	deviceMgr  *DeviceManager
 	historyMgr *HistoryManager
+	serialMgr  *SerialManager
+	iosMgr     *IOSManager
 }
 
 func NewServer(addr string, devMode bool) (*Server, error) {
+	iosMgr := NewIOSManager()
+
 	s := &Server{
 		mux:        http.NewServeMux(),
 		addr:       addr,
 		devMode:    devMode,
 		deviceMgr:  NewDeviceManager(),
 		historyMgr: NewHistoryManager(100),
+		serialMgr:  NewSerialManager(),
+		iosMgr:     iosMgr,
 	}
 	s.setupRoutes()
 	return s, nil
@@ -44,12 +50,25 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) setupRoutes() {
-	// API routes
+	// API routes - devices
 	s.mux.HandleFunc("/api/devices", s.handleDevices)
 	s.mux.HandleFunc("/api/devices/connect", s.handleConnect)
 	s.mux.HandleFunc("/api/devices/", s.handleDeviceOps)
+
+	// API routes - serial
+	s.mux.HandleFunc("/api/serial/ports", s.handleSerialPorts)
+	s.mux.HandleFunc("/api/serial/connect", s.handleSerialConnect)
+	s.mux.HandleFunc("/api/serial/", s.handleSerialOps)
+
+	// API routes - commands & history
 	s.mux.HandleFunc("/api/commands/history", s.handleHistory)
 	s.mux.HandleFunc("/api/export/yaml", s.handleYamlExport)
+
+	// API routes - iOS
+	s.mux.HandleFunc("/api/ios/devices", s.handleIosDevices)
+	s.mux.HandleFunc("/api/ios/forward", s.handleIosForward)
+	s.mux.HandleFunc("/api/ios/wda/start", s.handleIosWdaStart)
+	s.mux.HandleFunc("/api/ios/wda/stop", s.handleIosWdaStop)
 
 	// Frontend static files (SPA)
 	if !s.devMode {
