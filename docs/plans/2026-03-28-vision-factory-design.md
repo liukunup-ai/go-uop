@@ -1,8 +1,8 @@
 # Vision Module Refactoring Design
 
 **Date**: 2026-03-28
-**Author**: Sisyphus Agent
-**Status**: Approved
+**Author**: Sisor Agent
+**Status**: Approved + Implemented
 
 ## Overview
 
@@ -12,16 +12,18 @@ Refactor `pkg/vision/template.go` to use factory pattern for visual finding. Sup
 
 ```
 pkg/vision/
-├── matcher.go          # Interface + factory + options
-├── result.go           # MatchResult + helper methods
-├── sift/
-│   └── matcher.go      # SIFT + RANSAC implementation
-├── loftr/
-│   └── matcher.go      # LoFTR ONNX inference implementation
-└── matchers/
-    ├── template.go     # OpenCV single-scale template matching
-    └── multiscale.go   # Multi-scale template matching + NMS + dynamic threshold
+├── matcher.go              # Interface + factory + options
+├── result.go               # MatchResult + helper methods
+├── matcher_template.go     # OpenCV single-scale template matching
+├── matcher_multiscale.go   # Multi-scale template matching + NMS
+├── matcher_sift.go        # SIFT + RANSAC implementation
+├── matcher_loftr.go       # LoFTR ONNX inference
+├── matcher_debug.go       # Debug rendering helper
+├── integration_test.go    # Integration tests
+└── *_test.go            # Unit tests
 ```
+
+Note: All matcher implementations are in the same `pkg/vision` package to avoid import cycles.
 
 ## Dependencies
 
@@ -79,6 +81,35 @@ func WithNMSThreshold(t float64) Option        // NMS threshold
 func WithDebug(outputDir string) Option         // Debug output directory
 ```
 
+## Algorithms
+
+### Template (OpenCV)
+
+- Uses `gocv.MatchTemplate` with `TmCcoeffNormed`
+- Single-scale matching
+- Returns best match above threshold
+
+### Multiscale (OpenCV)
+
+- Multi-scale search from `scaleMin` to `scaleMax` with `scaleStep`
+- NMS (Non-Maximum Suppression) using IoU
+- Returns multiple matches
+
+### SIFT + RANSAC
+
+- Uses `gocv.NewSIFT()` detector
+- BFMatcher with kNN
+- Lowe's ratio test (0.75)
+- RANSAC homography verification
+- Perspective transform for bounding box
+
+### LoFTR (ONNX Runtime)
+
+- Uses `github.com/yalue/onnxruntime_go` DynamicAdvancedSession
+- Input: 512x512 grayscale, normalized to [0,1]
+- Output: keypoints0, keypoints1, confidence
+- Model: https://github.com/oooooha/loftr2onnx
+
 ## Debug Rendering
 
 When debug is enabled, renders:
@@ -117,13 +148,39 @@ for i, r := range results {
 // Debug image auto-saved if debug enabled
 ```
 
-## Implementation Tasks
+## LoFTR Setup
 
-1. Create `pkg/vision/matcher.go` with interface and factory
-2. Create `pkg/vision/result.go` with MatchResult and helpers
-3. Create `pkg/vision/matchers/template.go` - OpenCV single-scale
-4. Create `pkg/vision/matchers/multiscale.go` - Multi-scale + NMS
-5. Create `pkg/vision/sift/matcher.go` - SIFT + RANSAC
-6. Create `pkg/vision/loftr/matcher.go` - LoFTR ONNX
-7. Update existing `pkg/vision/template.go` to use new structure
-8. Add tests for each matcher
+To use LoFTR matcher:
+
+1. Install ONNX Runtime shared library:
+```bash
+# macOS
+brew install onnxruntime
+
+# Linux/Windows: download from https://github.com/microsoft/onnxruntime/releases
+```
+
+2. Set library path (if not in default location):
+```bash
+export ONNXRUNTIME_LIB_PATH=/opt/homebrew/lib/libonnxruntime.dylib
+```
+
+3. Download LoFTR ONNX model:
+```bash
+export LOFTR_MODEL_PATH=./models/loftr_outdoor_ds.onnx
+# Model from: https://github.com/oooooha/loftr2onnx
+```
+
+## Implementation Status
+
+| Task | Status |
+|------|--------|
+| Create `pkg/vision/matcher.go` with interface and factory | ✅ |
+| Create `pkg/vision/result.go` with MatchResult and helpers | ✅ |
+| Create `pkg/vision/matcher_template.go` - OpenCV single-scale | ✅ |
+| Create `pkg/vision/matcher_multiscale.go` - Multi-scale + NMS | ✅ |
+| Create `pkg/vision/matcher_sift.go` - SIFT + RANSAC | ✅ |
+| Create `pkg/vision/matcher_loftr.go` - LoFTR ONNX | ✅ |
+| Create `pkg/vision/matcher_debug.go` - Debug rendering | ✅ |
+| Remove old `pkg/vision/template.go` | ✅ |
+| Add integration tests | ✅ |
