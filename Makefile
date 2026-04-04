@@ -138,15 +138,26 @@ console/build: ## Build console frontend
 
 .PHONY: dev/console
 dev/console: ## Run console backend in dev mode (serves on :8080, proxies to localhost:5173)
-	go run ./cmd/console/main.go -dev -open
+	go run ./cmd/server/main.go -dev -open
 
 .PHONY: build/console
 build/console: console/build ## Build console binary with embedded frontend
-	go build -o bin/uop-console ./cmd/console/
+	go build -o bin/uop-server ./cmd/server/
 
 .PHONY: run/console
 run/console: ## Run console binary
-	./bin/uop-console
+	./bin/uop-server
+
+# =============================================================================
+# CLI (Console)
+# =============================================================================
+.PHONY: build/cli
+build/cli: ## Build CLI binary
+	go build -o bin/uop ./cmd/console/
+
+.PHONY: run/cli
+run/cli: ## Run CLI
+	./bin/uop --help
 
 # =============================================================================
 # Clean
@@ -154,7 +165,7 @@ run/console: ## Run console binary
 .PHONY: clean
 clean: ## Clean build artifacts
 	rm -rf coverage.out coverage.html
-	rm -rf bin/uop-console
+	rm -rf bin/uop-server bin/uop
 	rm -rf console/dist console/_out
 	find . -name "*.test" -delete
 	find . -name "*_mock.go" -delete
