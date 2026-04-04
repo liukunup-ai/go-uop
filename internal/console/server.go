@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/liukunup/go-uop/internal/report"
+	"github.com/liukunup/go-uop/internal/runner"
 )
 
 // ConsoleAssets holds the embedded console frontend files.
@@ -21,19 +24,35 @@ type Server struct {
 	historyMgr *HistoryManager
 	serialMgr  *SerialManager
 	iosMgr     *IOSManager
+	// Runner fields
+	devicePool  *runner.DevicePool
+	executor    *runner.Executor
+	reportGen   *report.Generator
+	reportCfg   *report.Config
+	suiteRunner *runner.SuiteRunner
 }
 
 func NewServer(addr string, devMode bool) (*Server, error) {
 	iosMgr := NewIOSManager()
+	devicePool := runner.NewDevicePool()
+	reportGen := report.NewGenerator("uop-suite")
+	reportCfg := report.DefaultConfig()
+	executor := runner.NewExecutor(devicePool, reportGen)
+	suiteRunner := runner.NewSuiteRunner(devicePool, reportGen)
 
 	s := &Server{
-		mux:        http.NewServeMux(),
-		addr:       addr,
-		devMode:    devMode,
-		deviceMgr:  NewDeviceManager(),
-		historyMgr: NewHistoryManager(100),
-		serialMgr:  NewSerialManager(),
-		iosMgr:     iosMgr,
+		mux:         http.NewServeMux(),
+		addr:        addr,
+		devMode:     devMode,
+		deviceMgr:   NewDeviceManager(),
+		historyMgr:  NewHistoryManager(100),
+		serialMgr:   NewSerialManager(),
+		iosMgr:      iosMgr,
+		devicePool:  devicePool,
+		executor:    executor,
+		reportGen:   reportGen,
+		reportCfg:   reportCfg,
+		suiteRunner: suiteRunner,
 	}
 	s.setupRoutes()
 	return s, nil
@@ -69,6 +88,15 @@ func (s *Server) setupRoutes() {
 	s.mux.HandleFunc("/api/ios/forward", s.handleIosForward)
 	s.mux.HandleFunc("/api/ios/wda/start", s.handleIosWdaStart)
 	s.mux.HandleFunc("/api/ios/wda/stop", s.handleIosWdaStop)
+
+	// API routes - runner
+	s.mux.HandleFunc("/api/runner/run", s.handleRunnerRun)
+	s.mux.HandleFunc("/api/runner/debug", s.handleRunnerDebug)
+	s.mux.HandleFunc("/api/runner/test", s.handleRunnerTest)
+	s.mux.HandleFunc("/api/runner/suite", s.handleRunnerSuite)
+	s.mux.HandleFunc("/api/runner/devices", s.handleRunnerDevices)
+	s.mux.HandleFunc("/api/runner/switch", s.handleRunnerSwitch)
+	s.mux.HandleFunc("/api/runner/reports", s.handleRunnerReports)
 
 	// Frontend static files (SPA)
 	if !s.devMode {

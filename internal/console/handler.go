@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/liukunup/go-uop/internal/report"
+	"github.com/liukunup/go-uop/internal/runner"
 )
 
 func (s *Server) handleDevices(w http.ResponseWriter, r *http.Request) {
@@ -458,4 +461,257 @@ func (s *Server) handleIosWdaStop(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]interface{}{
 		"success": true,
 	})
+}
+
+type RunnerRunRequest struct {
+	YamlContent string `json:"yamlContent"`
+	DeviceID    string `json:"deviceId"`
+}
+
+func (s *Server) handleRunnerRun(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+
+	var req RunnerRunRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST")
+		return
+	}
+
+	flow, err := runner.ParseFlowString(req.YamlContent)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "PARSE_FLOW_FAILED")
+		return
+	}
+
+	if req.DeviceID != "" {
+		if err := s.devicePool.SwitchDevice(req.DeviceID); err != nil {
+			writeError(w, http.StatusBadRequest, "DEVICE_SWITCH_FAILED")
+			return
+		}
+	}
+
+	s.reportGen.StartTest(flow.Name)
+	err = s.executor.ExecuteFlow(flow)
+	status := "passed"
+	if err != nil {
+		status = "failed"
+	}
+	s.reportGen.EndTest(status, err)
+
+	result := s.reportGen.Generate()
+	writeJSON(w, map[string]interface{}{
+		"success": true,
+		"result":  result,
+	})
+}
+
+func (s *Server) handleRunnerDebug(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+
+	var req RunnerRunRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST")
+		return
+	}
+
+	flow, err := runner.ParseFlowString(req.YamlContent)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "PARSE_FLOW_FAILED")
+		return
+	}
+
+	if req.DeviceID != "" {
+		if err := s.devicePool.SwitchDevice(req.DeviceID); err != nil {
+			writeError(w, http.StatusBadRequest, "DEVICE_SWITCH_FAILED")
+			return
+		}
+	}
+
+	debugger := runner.NewDebugger(flow.Steps)
+	stateMap := map[runner.DebugState]string{
+		runner.DebugRunning:  "running",
+		runner.DebugPaused:   "paused",
+		runner.DebugStepping: "stepping",
+		runner.DebugStopped:  "stopped",
+	}
+	stateStr := stateMap[debugger.State()]
+	if stateStr == "" {
+		stateStr = "unknown"
+	}
+	writeJSON(w, map[string]interface{}{
+		"success":     true,
+		"totalSteps":  len(flow.Steps),
+		"currentStep": debugger.CurrentStep(),
+		"state":       stateStr,
+	})
+}
+
+type RunnerTestRequest struct {
+	DeviceType string `json:"deviceType"`
+	Serial     string `json:"serial"`
+}
+
+func (s *Server) handleRunnerTest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+
+	var req RunnerTestRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST")
+		return
+	}
+
+	deviceID := req.Serial
+	if deviceID == "" {
+		deviceID = "test-device"
+	}
+
+	if err := s.devicePool.AddDevice(deviceID, req.DeviceType, req.Serial); err != nil {
+		writeError(w, http.StatusInternalServerError, "ADD_DEVICE_FAILED")
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"success":    true,
+		"deviceId":   deviceID,
+		"deviceType": req.DeviceType,
+	})
+}
+
+type RunnerSuiteRequest struct {
+	SuitePath string `json:"suitePath"`
+}
+
+func (s *Server) handleRunnerSuite(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+
+	var req RunnerSuiteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST")
+		return
+	}
+
+	result, err := runner.ParseAndRunSuiteFile(req.SuitePath, s.devicePool, s.reportGen)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "RUN_SUITE_FAILED")
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"success":     true,
+		"totalSteps":  result.TotalSteps,
+		"passedSteps": result.PassedSteps,
+		"failedSteps": result.FailedSteps,
+		"flowResults": result.FlowResults,
+	})
+}
+
+func (s *Server) handleRunnerDevices(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+
+	devices := s.devicePool.ListDevices()
+	var deviceList []map[string]interface{}
+	for id, dev := range devices {
+		deviceList = append(deviceList, map[string]interface{}{
+			"id":      dev.ID,
+			"type":    dev.Type,
+			"serial":  dev.Serial,
+			"current": id == s.devicePool.CurrentDevice().ID,
+		})
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"devices":       deviceList,
+		"currentDevice": s.devicePool.CurrentDevice().ID,
+		"defaultDevice": s.devicePool.DefaultDevice().ID,
+	})
+}
+
+type RunnerSwitchRequest struct {
+	DeviceID string `json:"deviceId"`
+}
+
+func (s *Server) handleRunnerSwitch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+
+	var req RunnerSwitchRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST")
+		return
+	}
+
+	if err := s.devicePool.SwitchDevice(req.DeviceID); err != nil {
+		writeError(w, http.StatusBadRequest, "DEVICE_NOT_FOUND")
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"success":  true,
+		"deviceId": req.DeviceID,
+	})
+}
+
+type RunnerReportsRequest struct {
+	Format string `json:"format"`
+	Path   string `json:"path"`
+}
+
+func (s *Server) handleRunnerReports(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+
+	format := r.URL.Query().Get("format")
+	if format == "" {
+		format = "json"
+	}
+
+	result := s.reportGen.Generate()
+
+	switch format {
+	case "html":
+		html, err := report.RenderHTML(result)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "RENDER_HTML_FAILED")
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(html))
+	case "junit":
+		junitXML, err := report.RenderJUnitXML(result)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "RENDER_JUNIT_FAILED")
+			return
+		}
+		w.Header().Set("Content-Type", "application/xml")
+		w.Write([]byte(junitXML))
+	case "json":
+		fallthrough
+	default:
+		jsonData, err := s.reportGen.ToJSON()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "GENERATE_JSON_FAILED")
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
+	}
 }
