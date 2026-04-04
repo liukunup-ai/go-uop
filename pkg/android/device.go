@@ -99,4 +99,16 @@ func (d *Device) Swipe(x1, y1, x2, y2 int, duration time.Duration) error {
 	return d.client.Swipe(x1, y1, x2, y2, int(duration.Milliseconds()))
 }
 
+func (d *Device) GetAlertText() (string, error) {
+	return "", nil
+}
+
+func (d *Device) AcceptAlert() error {
+	return nil
+}
+
+func (d *Device) DismissAlert() error {
+	return nil
+}
+
 var _ core.Device = (*Device)(nil)

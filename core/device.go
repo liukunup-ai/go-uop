@@ -22,6 +22,15 @@ type Device interface {
 
 	// Close releases device resources
 	Close() error
+
+	// GetAlertText returns alert text if present
+	GetAlertText() (string, error)
+
+	// AcceptAlert accepts the current alert
+	AcceptAlert() error
+
+	// DismissAlert dismisses the current alert
+	DismissAlert() error
 }
 
 // Platform represents target platform

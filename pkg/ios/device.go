@@ -76,4 +76,16 @@ func (d *Device) GetSource() (string, error) {
 	return d.client.GetSource()
 }
 
+func (d *Device) GetAlertText() (string, error) {
+	return d.client.GetAlertText()
+}
+
+func (d *Device) AcceptAlert() error {
+	return d.client.AcceptAlert()
+}
+
+func (d *Device) DismissAlert() error {
+	return d.client.DismissAlert()
+}
+
 var _ core.Device = (*Device)(nil)
