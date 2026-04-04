@@ -1,11 +1,13 @@
 package console
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/liukunup/go-uop/core"
+	"github.com/liukunup/go-uop/internal/command"
 	"github.com/liukunup/go-uop/pkg/android"
 	"github.com/liukunup/go-uop/pkg/android/adb"
 	"github.com/liukunup/go-uop/pkg/ios"
@@ -145,7 +147,7 @@ func (m *DeviceManager) GetConnected(id string) (core.Device, error) {
 	return device, nil
 }
 
-// ExecuteCommand executes a command on a device
+// ExecuteCommand executes a command on a device using Command pattern
 func (m *DeviceManager) ExecuteCommand(id string, cmd string, params map[string]interface{}) (*CommandRecord, error) {
 	device, err := m.GetConnected(id)
 	if err != nil {
@@ -164,28 +166,44 @@ func (m *DeviceManager) ExecuteCommand(id string, cmd string, params map[string]
 		record.Duration = time.Since(start).String()
 	}()
 
+	// Create command based on type using Command pattern
+	var cmdObj command.DeviceCommand
 	switch cmd {
 	case "tap":
 		x, _ := toInt(params["x"])
 		y, _ := toInt(params["y"])
-		err = device.Tap(x, y)
+		cmdObj = command.NewTapCommand(x, y)
 	case "input":
 		text, _ := toString(params["text"])
-		err = device.SendKeys(text)
+		cmdObj = command.NewSendKeysCommand(text)
 	case "launch":
-		err = device.Launch()
+		cmdObj = command.NewLaunchCommand("")
+	case "screenshot":
+		cmdObj = command.NewScreenshotCommand("", "")
 	case "terminate":
+		// terminate is handled separately - not a DeviceCommand
 		if t, ok := device.(interface{ Terminate() error }); ok {
 			err = t.Terminate()
-		} else {
-			err = ErrUnknownCommand
+			record.Success = err == nil
+			if err != nil {
+				record.Output = err.Error()
+			}
+			return record, err
 		}
-	case "screenshot":
-		// Screenshot handled separately
+		err = ErrUnknownCommand
+		record.Success = false
+		record.Output = err.Error()
+		return record, err
 	default:
 		err = ErrUnknownCommand
+		record.Success = false
+		record.Output = err.Error()
+		return record, err
 	}
 
+	// Set device and execute command
+	cmdObj.SetDevice(device)
+	err = cmdObj.Execute(context.Background())
 	record.Success = err == nil
 	if err != nil {
 		record.Output = err.Error()
