@@ -1,11 +1,13 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/liukunup/go-uop/core"
 	"github.com/liukunup/go-uop/internal/report"
+	"github.com/liukunup/go-uop/internal/watcher"
 )
 
 type CommandExecutor func(device core.Device, args map[string]any) error
@@ -14,6 +16,7 @@ type Executor struct {
 	pool      *DevicePool
 	reportGen *report.Generator
 	executors map[string]CommandExecutor
+	watcher   *watcher.WatcherEngine
 }
 
 func NewExecutor(pool *DevicePool, reportGen *report.Generator) *Executor {
@@ -23,6 +26,19 @@ func NewExecutor(pool *DevicePool, reportGen *report.Generator) *Executor {
 		executors: make(map[string]CommandExecutor),
 	}
 	e.registerCommands()
+	return e
+}
+
+// WithWatcher sets the watcher engine for popup handling
+func (e *Executor) WithWatcher(w *watcher.WatcherEngine) *Executor {
+	e.watcher = w
+	watcher.CommandExecutor = func(name string, args map[string]any, device core.Device) error {
+		executor, exists := e.executors[name]
+		if !exists {
+			return fmt.Errorf("unknown command: %s", name)
+		}
+		return executor(device, args)
+	}
 	return e
 }
 
@@ -148,6 +164,15 @@ func (e *Executor) executeStep(index int, step Step) error {
 
 		if err != nil {
 			return err
+		}
+	}
+
+	if e.watcher != nil && e.watcher.Enabled() {
+		device := e.pool.CurrentDevice()
+		if device != nil && device.device != nil {
+			if err := e.watcher.Check(context.Background(), device.device); err != nil {
+				fmt.Printf("watcher warning: %v\n", err)
+			}
 		}
 	}
 
