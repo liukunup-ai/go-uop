@@ -2,9 +2,11 @@ package watcher
 
 import (
 	"context"
+	"os"
 	"regexp"
 
 	"github.com/liukunup/go-uop/core"
+	"github.com/liukunup/go-uop/pkg/vision"
 )
 
 type MatchCondition interface {
@@ -24,7 +26,31 @@ func NewImageMatch(templatePath string, threshold float64) *ImageMatch {
 }
 
 func (m *ImageMatch) Match(ctx context.Context, device core.Device) (bool, error) {
-	return false, nil
+	screenshot, err := device.Screenshot()
+	if err != nil {
+		return false, err
+	}
+
+	template, err := os.ReadFile(m.TemplatePath)
+	if err != nil {
+		return false, err
+	}
+
+	matcher, err := vision.NewMatcher("template", vision.WithThreshold(m.Threshold))
+	if err != nil {
+		return false, err
+	}
+
+	results, err := matcher.Find(screenshot, template)
+	if err != nil {
+		return false, err
+	}
+
+	if len(results) == 0 {
+		return false, nil
+	}
+
+	return results[0].Score >= m.Threshold, nil
 }
 
 type TextMatch struct {
