@@ -13,8 +13,8 @@ type Action interface {
 	Execute(ctx context.Context, device core.Device) error
 }
 
-// InlineCmd executes a command directly
-type InlineCmd struct {
+// InlineCommand executes a command directly
+type InlineCommand struct {
 	Name string
 	Args map[string]any
 }
@@ -22,31 +22,31 @@ type InlineCmd struct {
 // CommandExecutor is the function signature for executing commands
 var CommandExecutor func(name string, args map[string]any, device core.Device) error
 
-// NewInlineCommand creates a new InlineCmd action
-func NewInlineCommand(name string, args map[string]any) *InlineCmd {
-	return &InlineCmd{Name: name, Args: args}
+// NewInlineCommand creates a new InlineCommand action
+func NewInlineCommand(name string, args map[string]any) *InlineCommand {
+	return &InlineCommand{Name: name, Args: args}
 }
 
 // Execute runs the inline command
-func (a *InlineCmd) Execute(ctx context.Context, device core.Device) error {
+func (a *InlineCommand) Execute(ctx context.Context, device core.Device) error {
 	if CommandExecutor == nil {
 		return nil
 	}
 	return CommandExecutor(a.Name, a.Args, device)
 }
 
-// RefFlow references an existing flow by name
-type RefFlow struct {
+// ReferenceFlow references an existing flow by name
+type ReferenceFlow struct {
 	FlowName string
 }
 
-// NewReferenceFlow creates a new RefFlow action
-func NewReferenceFlow(flowName string) *RefFlow {
-	return &RefFlow{FlowName: flowName}
+// NewReferenceFlow creates a new ReferenceFlow action
+func NewReferenceFlow(flowName string) *ReferenceFlow {
+	return &ReferenceFlow{FlowName: flowName}
 }
 
 // Execute runs the referenced flow
-func (a *RefFlow) Execute(ctx context.Context, device core.Device) error {
+func (a *ReferenceFlow) Execute(ctx context.Context, device core.Device) error {
 	// TODO: Look up flow from registry and execute
 	return nil
 }
@@ -66,16 +66,20 @@ func ActionSequenceWithRetry(actions []Action, retry int) *ActionSequence {
 func (s *ActionSequence) Execute(ctx context.Context, device core.Device) error {
 	var lastErr error
 	for attempt := 0; attempt <= s.Retry; attempt++ {
+		lastErr = nil // reset error for each attempt
+		allSucceeded := true
 		for _, action := range s.Actions {
 			if err := action.Execute(ctx, device); err != nil {
 				lastErr = err
+				allSucceeded = false
 				break
 			}
 		}
-		if lastErr == nil {
-			return nil
+		if allSucceeded {
+			return nil // success, no retry needed
 		}
 		if attempt < s.Retry {
+			// Wrap error with retry info, but only on retry attempts (not the last failure)
 			lastErr = fmt.Errorf("retry %d: %w", attempt+1, lastErr)
 		}
 	}
