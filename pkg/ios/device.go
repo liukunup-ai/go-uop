@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/liukunup/go-uop/core"
-	"github.com/liukunup/go-uop/pkg/ios/wda"
+	"github.com/liukunup/go-uop/pkg/wda"
 )
 
 type Device struct {
