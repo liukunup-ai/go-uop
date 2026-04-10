@@ -69,7 +69,7 @@ type ElementRect struct {
 
 // W3C Actions for touch/pointer
 type ActionsRequest struct {
-	Actions []interface{} `json:"actions"`
+	Actions []any `json:"actions"`
 }
 
 // Source response

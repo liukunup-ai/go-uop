@@ -43,8 +43,8 @@ func (d *Device) Platform() core.Platform {
 	return core.IOS
 }
 
-func (d *Device) Info() (map[string]interface{}, error) {
-	return map[string]interface{}{
+func (d *Device) Info() (map[string]any, error) {
+	return map[string]any{
 		"platform": "ios",
 		"bundleId": d.config.bundleID,
 		"wda":      d.config.address,

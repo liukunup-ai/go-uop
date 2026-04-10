@@ -2,7 +2,6 @@ package wda
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -52,7 +51,7 @@ func NewClientWithSession(baseURL string, bundleID string) (*Client, error) {
 }
 
 // doRequest performs an HTTP request with W3C compliance
-func (c *Client) doRequest(method, path string, body interface{}) ([]byte, error) {
+func (c *Client) doRequest(method, path string, body any) ([]byte, error) {
 	u := c.BaseURL.ResolveReference(&url.URL{Path: path})
 
 	var reqBody io.Reader
@@ -100,7 +99,7 @@ func (c *Client) doRequest(method, path string, body interface{}) ([]byte, error
 }
 
 // doSessionRequest performs a request within an active session
-func (c *Client) doSessionRequest(method, path string, body interface{}) ([]byte, error) {
+func (c *Client) doSessionRequest(method, path string, body any) ([]byte, error) {
 	if c.SessionID == "" {
 		return nil, fmt.Errorf("no active session")
 	}
@@ -127,9 +126,4 @@ func (c *Client) GetSessionID() string {
 // GetCapabilities returns the session capabilities
 func (c *Client) GetCapabilities() map[string]any {
 	return c.Capabilities
-}
-
-// decodeBase64 decodes a base64 string
-func decodeBase64(s string) ([]byte, error) {
-	return base64.StdEncoding.DecodeString(s)
 }
