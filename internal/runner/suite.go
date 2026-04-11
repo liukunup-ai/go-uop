@@ -9,17 +9,17 @@ import (
 )
 
 type SuiteResult struct {
-	FlowResults []*FlowResult
+	TCResults   []*TCResult
 	TotalSteps  int
 	PassedSteps int
 	FailedSteps int
 }
 
-type FlowResult struct {
-	FlowName string
-	Status   string
-	Steps    int
-	Error    error
+type TCResult struct {
+	TCName string
+	Status string
+	Steps  int
+	Error  error
 }
 
 type SuiteRunner struct {
@@ -37,7 +37,7 @@ func NewSuiteRunner(pool *DevicePool, reportGen *report.Generator) *SuiteRunner 
 }
 
 func ParseAndRunSuite(r io.Reader, pool *DevicePool, reportGen *report.Generator) (*SuiteResult, error) {
-	suite, err := ParseSuite(r)
+	suite, err := ParseFlow(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse suite: %w", err)
 	}
@@ -56,53 +56,43 @@ func ParseAndRunSuiteFile(path string, pool *DevicePool, reportGen *report.Gener
 	return ParseAndRunSuite(file, pool, reportGen)
 }
 
-func (s *SuiteRunner) RunSuite(suite *Suite) (*SuiteResult, error) {
+func (s *SuiteRunner) RunSuite(suite *TestSuite) (*SuiteResult, error) {
 	result := &SuiteResult{
-		FlowResults: make([]*FlowResult, 0, len(suite.Flows)),
+		TCResults: make([]*TCResult, 0, len(suite.TestCases)),
 	}
 
-	for _, flowSpec := range suite.Flows {
-		flowResult := s.runFlow(flowSpec)
-		result.FlowResults = append(result.FlowResults, flowResult)
-		if flowResult.Status == "failed" {
-			result.FailedSteps += flowResult.Steps
+	for _, tc := range suite.TestCases {
+		tcResult := s.runTestCase(tc)
+		result.TCResults = append(result.TCResults, tcResult)
+		if tcResult.Status == "failed" {
+			result.FailedSteps += tcResult.Steps
 		} else {
-			result.PassedSteps += flowResult.Steps
+			result.PassedSteps += tcResult.Steps
 		}
-		result.TotalSteps += flowResult.Steps
+		result.TotalSteps += tcResult.Steps
 	}
 
 	return result, nil
 }
 
-func (s *SuiteRunner) runFlow(flowSpec SuiteFlow) *FlowResult {
-	s.reportGen.StartTest(flowSpec.Name)
+func (s *SuiteRunner) runTestCase(tc TestCase) *TCResult {
+	s.reportGen.StartTest(tc.Name)
 
-	flow, err := ParseFlowFile(flowSpec.Path)
+	err := s.executor.ExecuteTestCase(0, tc)
 	if err != nil {
 		s.reportGen.EndTest("failed", err)
-		return &FlowResult{
-			FlowName: flowSpec.Name,
-			Status:   "failed",
-			Error:    err,
-		}
-	}
-
-	err = s.executor.ExecuteFlow(flow)
-	if err != nil {
-		s.reportGen.EndTest("failed", err)
-		return &FlowResult{
-			FlowName: flow.Name,
-			Status:   "failed",
-			Steps:    len(flow.Steps),
-			Error:    err,
+		return &TCResult{
+			TCName: tc.Name,
+			Status: "failed",
+			Steps:  len(tc.Steps),
+			Error:  err,
 		}
 	}
 
 	s.reportGen.EndTest("passed", nil)
-	return &FlowResult{
-		FlowName: flow.Name,
-		Status:   "passed",
-		Steps:    len(flow.Steps),
+	return &TCResult{
+		TCName: tc.Name,
+		Status: "passed",
+		Steps:  len(tc.Steps),
 	}
 }

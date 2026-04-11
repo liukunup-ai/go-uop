@@ -116,7 +116,7 @@ func runCmd(args []string) int {
 			continue
 		}
 
-		if err := executor.ExecuteFlow(flow); err != nil {
+		if err := executor.ExecuteSuite(flow); err != nil {
 			fmt.Fprintf(os.Stderr, "Error executing %s: %v\n", flow.Name, err)
 		} else {
 			fmt.Printf("✓ %s completed\n", flow.Name)
@@ -169,12 +169,12 @@ func debugCmd(args []string) int {
 			continue
 		}
 
-		fmt.Printf("Flow: %s (%d steps)\n", flow.Name, len(flow.Steps))
-		debugger := runner.NewDebugger(flow.Steps)
+		fmt.Printf("Flow: %s (%d testcases)\n", flow.Name, len(flow.TestCases))
+		debugger := runner.NewDebugger(flow.TestCases)
 
-		if err := debugger.ExecuteWithDebug(flow, func(i int, step runner.Step) error {
-			fmt.Printf("[%d] %v\n", i, step)
-			return executor.ExecuteFlow(&runner.Flow{Name: flow.Name, Steps: []runner.Step{step}})
+		if err := debugger.ExecuteWithDebug(flow, func(tc, step int, s runner.Step) error {
+			fmt.Printf("[%d:%d] %v\n", tc, step, s)
+			return executor.ExecuteStep(fmt.Sprintf("%s-%d", s.Type, step), s)
 		}); err != nil {
 			fmt.Fprintf(os.Stderr, "Debug error: %v\n", err)
 		}
@@ -224,7 +224,7 @@ func testCmd(args []string) int {
 			}
 
 			reportGen.StartTest(flow.Name)
-			if err := executor.ExecuteFlow(flow); err != nil {
+			if err := executor.ExecuteSuite(flow); err != nil {
 				reportGen.EndTest("failed", err)
 				fmt.Printf("✗ %s failed: %v\n", flow.Name, err)
 			} else {

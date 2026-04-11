@@ -15,19 +15,20 @@ const (
 )
 
 type Debugger struct {
-	state       DebugState
-	mu          sync.RWMutex
-	currentStep int
-	steps       []Step
-	breakpoints map[int]bool
-	onBreak     func(step int, cmd string)
+	state         DebugState
+	mu            sync.RWMutex
+	currentTC     int
+	currentStep   int
+	testCases     []TestCase
+	breakpoints   map[string]bool
+	onBreak       func(tc, step int, stepType string)
 }
 
-func NewDebugger(steps []Step) *Debugger {
+func NewDebugger(testCases []TestCase) *Debugger {
 	return &Debugger{
 		state:       DebugRunning,
-		steps:       steps,
-		breakpoints: make(map[int]bool),
+		testCases:   testCases,
+		breakpoints: make(map[string]bool),
 	}
 }
 
@@ -77,62 +78,65 @@ func (d *Debugger) Retry() {
 	defer d.mu.Unlock()
 }
 
-func (d *Debugger) CurrentStep() int {
+func (d *Debugger) CurrentPosition() (tc, step int) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	return d.currentStep
+	return d.currentTC, d.currentStep
 }
 
-func (d *Debugger) SetBreakpoint(step int) {
+func (d *Debugger) SetBreakpoint(tc, step int) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.breakpoints[step] = true
+	d.breakpoints[fmt.Sprintf("%d:%d", tc, step)] = true
 }
 
-func (d *Debugger) ClearBreakpoint(step int) {
+func (d *Debugger) ClearBreakpoint(tc, step int) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	delete(d.breakpoints, step)
+	delete(d.breakpoints, fmt.Sprintf("%d:%d", tc, step))
 }
 
-func (d *Debugger) HasBreakpoint(step int) bool {
+func (d *Debugger) HasBreakpoint(tc, step int) bool {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	return d.breakpoints[step]
+	return d.breakpoints[fmt.Sprintf("%d:%d", tc, step)]
 }
 
 func (d *Debugger) WaitForResume() error {
 	d.mu.Lock()
 	for d.state == DebugPaused {
 		d.mu.Unlock()
-		return fmt.Errorf("debugger paused at step %d", d.currentStep)
+		return fmt.Errorf("debugger paused at testcase %d, step %d", d.currentTC, d.currentStep)
 	}
 	d.mu.Unlock()
 	return nil
 }
 
-func (d *Debugger) ExecuteWithDebug(flow *Flow, exec func(int, Step) error) error {
-	for i := range flow.Steps {
+func (d *Debugger) ExecuteWithDebug(suite *TestSuite, exec func(tc, step int, s Step) error) error {
+	for i := range suite.TestCases {
 		d.mu.Lock()
-		d.currentStep = i
+		d.currentTC = i
 
 		for d.state == DebugPaused {
 			d.mu.Unlock()
-			return fmt.Errorf("debugger paused at step %d", i)
+			return fmt.Errorf("debugger paused at testcase %d", i)
 		}
 
 		if d.state == DebugStopped {
 			d.mu.Unlock()
-			return fmt.Errorf("debugger stopped at step %d", i)
+			return fmt.Errorf("debugger stopped at testcase %d", i)
 		}
 		d.mu.Unlock()
 
-		if d.HasBreakpoint(i) && d.onBreak != nil {
-			d.onBreak(i, fmt.Sprintf("%v", flow.Steps[i]))
-		}
+		tc := suite.TestCases[i]
+		for j := range tc.Steps {
+			if d.HasBreakpoint(i, j) && d.onBreak != nil {
+				d.onBreak(i, j, tc.Steps[j].Type)
+			}
 
-		if err := exec(i, flow.Steps[i]); err != nil {
-			return fmt.Errorf("step %d failed: %w", i, err)
+			if err := exec(i, j, tc.Steps[j]); err != nil {
+				return fmt.Errorf("testcase %d, step %d failed: %w", i, j, err)
+			}
 		}
 	}
 	return nil

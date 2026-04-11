@@ -1,0 +1,82 @@
+appId: com.yourcompany.xxx
+testOutputDir: ~/Desktop/commands
+devices:
+  - name: xxx
+    serial: emulator-5554
+---
+steps: # 对应 Action 对象
+  # === tapOn ===
+  - tapOn: My text
+  - tapOn:
+      selector: xxx
+  - tapOn:
+      id: buy_button
+      index: 2
+  - tapOn:
+      css: .secondaryButton
+  - tapOn:
+      traits: text
+  - tapOn:
+      text: 登录
+  - tapOn:
+      point: 100, 100 # 或者 100,100
+  - tapOn:
+      point: 50%, 50% # 或者 50%,50%
+  - tapOn:
+      text: xxx
+      repeat: 3 # times
+      delay: 100 # milliseconds
+  - tapOn:
+      image: ~/Desktop/xxx.png
+  # === swipe ===
+  - swipe:
+      direction: LEFT # LEFT, RIGHT, UP, DOWN
+      duration: 2000
+  - swipe:
+      start: 100, 200
+      end: 300, 400
+  - swipe:
+      start: 90%, 50%
+      end: 10%, 50%
+  # === back ===
+  - back
+  # === inputText ===
+  - inputText: "string"
+  - inputText:
+    text: "user@example.com"
+    label: "Input the test system username"
+  # === hideKeyboard ===
+  - hideKeyboard
+  # === pressKey ===
+  - pressKey: "keyToPress"
+  # === takeScreenshot ===
+  - takeScreenshot:
+      path: LoginScreen
+      cropOn:
+        id: LoginFormContainer
+      label: Take a screenshot of the login form
+  # === startRecording & startRecording ===
+  - startRecording: recording
+  - startRecording:
+    path: "recordings/user_onboarding"
+    label: "Capture onboarding sequence for evidence"
+    optional: true
+  - stopRecording
+  # === launchApp ===
+  - launchApp
+  # === stopApp ===
+  - stopApp
+  # === push & pull ===
+  - push: LOCAL... REMOTE # adb push LOCAL... REMOTE
+  - pull: REMOTE... LOCAL # adb push REMOTE... LOCAL
+  # === shell ===
+  - shell: ls -l # adb shell ls -l
+  - shell:
+      command: ls -l
+  # === openLink ===
+  - openLink: https://example.com
+  - openLink:
+    link: awesomeapp://settings
+  - openLink: 
+      link: https://example.com
+      browser: true

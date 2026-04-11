@@ -1,0 +1,43 @@
+appId: com.yourcompany.xxx
+testOutputDir: ~/Desktop/demo
+devices:
+  - name: xxx
+    serial: emulator-5554
+    default: true
+  - name: yyy
+    udid: xxx
+  - name: zzz
+    dev: /dev/ttyUSB0
+name: testsuite
+description: xxx
+---
+name: testcase 1
+description: xxx
+device: yyy # 当前用例的默认设备
+steps:
+  - tapOn:
+      text: xxx
+---
+name: testcase 2
+description: xxx
+steps:
+  - tapOn:
+      device: zzz # 当前步骤使用设备 zzz
+      text: xxx
+---
+name: testcase 3
+description: xxx
+steps:
+  - tapOn:
+      text: xxx
+  - inputText:
+      content: abc
+---
+name: testcase 4
+description: XPath example
+steps:
+  - tapOn:
+      xpath: "//Button[@text='Submit']"
+  - tapOn:
+      xpath: "//android.widget.Button[@resource-id='submit_btn']"
+      index: 0

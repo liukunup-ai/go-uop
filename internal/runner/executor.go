@@ -29,7 +29,6 @@ func NewExecutor(pool *DevicePool, reportGen *report.Generator) *Executor {
 	return e
 }
 
-// WithWatcher sets the watcher engine for popup handling
 func (e *Executor) WithWatcher(w *watcher.WatcherEngine) *Executor {
 	e.watcher = w
 	watcher.CommandExecutor = func(name string, args map[string]any, device core.Device) error {
@@ -74,7 +73,11 @@ func (e *Executor) registerCommands() {
 			textStr := fmt.Sprintf("%v", text)
 			return device.SendKeys(textStr)
 		}
-		return fmt.Errorf("inputText: missing 'text' argument")
+		if content, ok := args["content"]; ok {
+			textStr := fmt.Sprintf("%v", content)
+			return device.SendKeys(textStr)
+		}
+		return fmt.Errorf("inputText: missing 'text' or 'content' argument")
 	}
 
 	e.executors["swipe"] = func(device core.Device, args map[string]any) error {
@@ -104,74 +107,63 @@ func (e *Executor) registerCommands() {
 	}
 }
 
-func (e *Executor) ExecuteFlow(flow *Flow) error {
-	for i, step := range flow.Steps {
-		if err := e.executeStep(i, step); err != nil {
-			return fmt.Errorf("step %d failed: %w", i, err)
+func (e *Executor) ExecuteSuite(suite *TestSuite) error {
+	for i, tc := range suite.TestCases {
+		if err := e.ExecuteTestCase(i, tc); err != nil {
+			return fmt.Errorf("testcase %d failed: %w", i, err)
 		}
 	}
 	return nil
 }
 
-func (e *Executor) executeStep(index int, step Step) error {
-	stepName := fmt.Sprintf("step-%d", index)
+func (e *Executor) ExecuteTestCase(index int, tc TestCase) error {
+	e.reportGen.StartTest(tc.Name)
 
-	if cmd, ok := step["device"]; ok {
-		deviceID, ok := cmd.(string)
-		if !ok {
-			return fmt.Errorf("device argument must be a string")
+	for i, step := range tc.Steps {
+		stepName := fmt.Sprintf("%s-%d", step.Type, i)
+		if err := e.ExecuteStep(stepName, step); err != nil {
+			e.reportGen.EndTest("failed", err)
+			return fmt.Errorf("step %d failed: %w", i, err)
 		}
-		if err := e.pool.SwitchDevice(deviceID); err != nil {
-			return fmt.Errorf("failed to switch to device %s: %w", deviceID, err)
-		}
-		e.reportGen.AddStep(stepName, 0, "passed", nil)
-		return nil
 	}
 
-	for cmdName, cmdArgs := range step {
-		executor, exists := e.executors[cmdName]
-		if !exists {
-			return fmt.Errorf("unknown command: %s", cmdName)
-		}
+	e.reportGen.EndTest("passed", nil)
+	return nil
+}
 
-		var args map[string]any
-		switch v := cmdArgs.(type) {
-		case Step:
-			args = v
-		case map[string]any:
-			args = v
-		default:
-			args = make(map[string]any)
-		}
+func (e *Executor) ExecuteStep(stepName string, step Step) error {
+	executor, exists := e.executors[step.Type]
+	if !exists {
+		return fmt.Errorf("unknown step: %s", step.Type)
+	}
 
-		start := time.Now()
-		device := e.pool.CurrentDevice()
-		if device == nil {
-			return fmt.Errorf("no device available")
-		}
+	start := time.Now()
 
-		var err error
-		if device.device != nil {
-			err = executor(device.device, args)
-		}
+	var device core.Device
+	if dev := e.pool.CurrentDevice(); dev != nil {
+		device = dev.device
+	}
 
-		duration := time.Since(start)
-		status := "passed"
-		if err != nil {
-			status = "failed"
-		}
-		e.reportGen.AddStep(fmt.Sprintf("%s-%s", stepName, cmdName), duration, status, err)
+	var err error
+	if device != nil {
+		err = executor(device, step.Params)
+	}
 
-		if err != nil {
-			return err
-		}
+	duration := time.Since(start)
+	status := "passed"
+	if err != nil {
+		status = "failed"
+	}
+	e.reportGen.AddStep(stepName, duration, status, err)
+
+	if err != nil {
+		return err
 	}
 
 	if e.watcher != nil && e.watcher.Enabled() {
-		device := e.pool.CurrentDevice()
-		if device != nil && device.device != nil {
-			if err := e.watcher.Check(context.Background(), device.device); err != nil {
-				fmt.Printf("watcher warning: %v\n", err)
+		if dev := e.pool.CurrentDevice(); dev != nil && dev.device != nil {
+			if watcherErr := e.watcher.Check(context.Background(), dev.device); watcherErr != nil {
+				fmt.Printf("watcher warning: %v\n", watcherErr)
 			}
 		}
 	}

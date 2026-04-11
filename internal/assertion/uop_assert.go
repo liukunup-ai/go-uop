@@ -40,7 +40,7 @@ func AssertVisible(device core.Device, loc *selector.Selector) error {
 	}
 
 	if !elem.Visible {
-		return &AssertError{Message: fmt.Sprintf("element %q is not visible", loc.Value)}
+		return &AssertError{Message: fmt.Sprintf("element %s is not visible", loc)}
 	}
 
 	return nil
@@ -58,7 +58,7 @@ func AssertNotVisible(device core.Device, loc *selector.Selector) error {
 	}
 
 	if elem.Visible {
-		return &AssertError{Message: fmt.Sprintf("element %q should not be visible", loc.Value)}
+		return &AssertError{Message: fmt.Sprintf("element %s should not be visible", loc)}
 	}
 
 	return nil

@@ -494,7 +494,7 @@ func (s *Server) handleRunnerRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.reportGen.StartTest(flow.Name)
-	err = s.executor.ExecuteFlow(flow)
+	err = s.executor.ExecuteSuite(flow)
 	status := "passed"
 	if err != nil {
 		status = "failed"
@@ -533,7 +533,7 @@ func (s *Server) handleRunnerDebug(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	debugger := runner.NewDebugger(flow.Steps)
+	debugger := runner.NewDebugger(flow.TestCases)
 	stateMap := map[runner.DebugState]string{
 		runner.DebugRunning:  "running",
 		runner.DebugPaused:   "paused",
@@ -544,11 +544,13 @@ func (s *Server) handleRunnerDebug(w http.ResponseWriter, r *http.Request) {
 	if stateStr == "" {
 		stateStr = "unknown"
 	}
+	tc, step := debugger.CurrentPosition()
 	writeJSON(w, map[string]interface{}{
-		"success":     true,
-		"totalSteps":  len(flow.Steps),
-		"currentStep": debugger.CurrentStep(),
-		"state":       stateStr,
+		"success":        true,
+		"totalTestCases": len(flow.TestCases),
+		"currentTC":      tc,
+		"currentStep":    step,
+		"state":          stateStr,
 	})
 }
 
@@ -613,7 +615,7 @@ func (s *Server) handleRunnerSuite(w http.ResponseWriter, r *http.Request) {
 		"totalSteps":  result.TotalSteps,
 		"passedSteps": result.PassedSteps,
 		"failedSteps": result.FailedSteps,
-		"flowResults": result.FlowResults,
+		"tcResults":   result.TCResults,
 	})
 }
 
